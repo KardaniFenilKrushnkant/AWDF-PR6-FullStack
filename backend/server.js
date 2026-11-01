@@ -7,6 +7,10 @@ const auth = require('./middleware/auth');
 const Task = require('./models/Task');
 const cacheService = require('./cache');
 
+// Practical 10: Event-Driven Architecture with EventEmitter
+const taskEvents = require('./events');
+require('./listeners'); // Register listeners at startup
+
 const app = express();
 
 app.use(cors());
@@ -32,10 +36,8 @@ app.get('/test-auth', (req, res) => {
 });
 
 // ==========================================================================
-// Practical 9: In-Memory Caching & Query Optimization (node-cache)
+// Practical 9: In-Memory Caching & Debug Stats
 // ==========================================================================
-
-// Supplementary Problem 2: Cache hit/miss debug stats endpoint
 app.get('/cache/stats', (req, res) => {
   res.json({
     status: 'success',
@@ -44,12 +46,15 @@ app.get('/cache/stats', (req, res) => {
   });
 });
 
-// Flush cache (used for benchmarking uncached vs cached)
 app.post('/cache/flush', (req, res) => {
   cacheService.flush();
   cacheService.resetStats();
   res.json({ message: 'Cache flushed successfully and counters reset' });
 });
+
+// ==========================================================================
+// Task Management API Routes with Caching & Asynchronous Events
+// ==========================================================================
 
 // 1. GET /tasks - Cached with TTL = 60s
 app.get('/tasks', async (req, res, next) => {
@@ -61,7 +66,6 @@ app.get('/tasks', async (req, res, next) => {
       return res.json(cachedTasks);
     }
 
-    // Cache Miss -> query MongoDB database
     const tasks = await Task.find();
     cacheService.set('all_tasks', tasks, 60);
 
@@ -72,7 +76,7 @@ app.get('/tasks', async (req, res, next) => {
   }
 });
 
-// 2. GET /tasks/:id - Supplementary Problem 1: Single-task caching
+// 2. GET /tasks/:id - Single task caching
 app.get('/tasks/:id', async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -87,7 +91,6 @@ app.get('/tasks/:id', async (req, res, next) => {
       return res.json(cachedTask);
     }
 
-    // Cache Miss -> query MongoDB database
     const task = await Task.findById(req.params.id);
 
     if (!task) {
@@ -103,22 +106,30 @@ app.get('/tasks/:id', async (req, res, next) => {
   }
 });
 
-// 3. POST /tasks - Create task & Invalidate cache
+// 3. POST /tasks - Create task & Asynchronously Emit 'task-created' Event
 app.post('/tasks', auth, async (req, res, next) => {
   try {
     const task = await Task.create(req.body);
 
-    // Invalidate collection cache so stale lists are never served
+    // Invalidate collection cache
     cacheService.del('all_tasks');
-    console.log('[Cache Invalidation] Invalidate key: all_tasks on POST');
 
+    // Immediate API response logging
+    const apiResponseTimestamp = new Date().toISOString();
+    console.log(`[API] Response 201 sent to client at ${apiResponseTimestamp}`);
+
+    // Return response immediately to client
     res.status(201).json(task);
+
+    // Practical 10: Asynchronously emit background event (Non-blocking)
+    taskEvents.emit('task-created', task);
+
   } catch (err) {
     next(err);
   }
 });
 
-// 4. PUT /tasks/:id - Update task & Invalidate both collection and single-task cache
+// 4. PUT /tasks/:id - Update task & Invalidate cache
 app.put('/tasks/:id', async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -141,10 +152,8 @@ app.put('/tasks/:id', async (req, res, next) => {
 
     await task.save();
 
-    // Cache Invalidation
     cacheService.del('all_tasks');
     cacheService.del(`task_${req.params.id}`);
-    console.log(`[Cache Invalidation] Invalidate keys: all_tasks, task_${req.params.id} on PUT`);
 
     res.json(task);
   } catch (err) {
@@ -152,7 +161,7 @@ app.put('/tasks/:id', async (req, res, next) => {
   }
 });
 
-// 5. DELETE /tasks/:id - Delete task & Invalidate cache
+// 5. DELETE /tasks/:id - Delete task & Emit 'task-deleted' Event (Supplementary 1)
 app.delete('/tasks/:id', async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -165,15 +174,26 @@ app.delete('/tasks/:id', async (req, res, next) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Cache Invalidation
     cacheService.del('all_tasks');
     cacheService.del(`task_${req.params.id}`);
-    console.log(`[Cache Invalidation] Invalidate keys: all_tasks, task_${req.params.id} on DELETE`);
+
+    const apiResponseTimestamp = new Date().toISOString();
+    console.log(`[API] Delete response sent at ${apiResponseTimestamp}`);
 
     res.json({ message: 'Task deleted successfully', task });
+
+    // Practical 10 Supplementary 1: Emit task-deleted event
+    taskEvents.emit('task-deleted', task);
+
   } catch (err) {
     next(err);
   }
+});
+
+// Supplementary 2: Trigger error event demonstration
+app.post('/test-event-error', auth, (req, res) => {
+  res.json({ message: 'Triggered error event simulation' });
+  taskEvents.emit('task-created', { title: 'Corrupted Task', simulateError: true });
 });
 
 // Structured error handler
@@ -200,12 +220,11 @@ mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000 })
   .then(() => {
     console.log('MongoDB connected successfully');
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT} with in-memory caching enabled`);
+      console.log(`Server running on port ${PORT} with EventEmitter & Caching enabled`);
     });
   })
   .catch((err) => {
     console.error('MongoDB connection failed:', err.message);
-    // Start server even if MongoDB is offline so local test mocking / cache verification functions
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT} (Offline DB mode)`);
     });
