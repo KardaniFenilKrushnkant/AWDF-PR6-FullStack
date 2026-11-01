@@ -2,52 +2,74 @@ import React, { memo } from 'react';
 
 /**
  * TaskItem Component
- * Supplementary Problem Solution:
- * Memoized using React.memo to eliminate unnecessary re-renders when the parent
- * form state changes (e.g., typing in the task title input field).
- * DevTools Profiler confirms this component does not re-render unless its specific
- * task props or handlers change.
+ * Memoized to eliminate unnecessary re-renders when parent input state updates.
+ * Styled with modern SaaS card layout.
  */
 function TaskItem({ task, onToggle, onEdit, onDelete }) {
+  const priorityClass = (task.priority || 'medium').toLowerCase();
+
   return (
     <article
-      className={`task-card ${task.completed ? 'completed' : ''}`}
+      className={`modern-task-card ${task.completed ? 'is-completed' : ''}`}
       key={task._id}
     >
-      <div className="task-main">
-        <label className="check-row">
+      <div className="task-card-left">
+        <label className="custom-checkbox-label">
           <input
             type="checkbox"
+            className="custom-checkbox-input"
             checked={Boolean(task.completed)}
             onChange={() => onToggle(task)}
           />
-          <span className="task-title">{task.title}</span>
+          <span className="checkbox-visual">
+            {task.completed && (
+              <svg viewBox="0 0 16 16" fill="none" className="check-svg">
+                <path
+                  d="M13.5 4.5L6.5 11.5L2.5 7.5"
+                  stroke="white"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </span>
         </label>
 
-        <p className="task-description">
-          {task.description || 'No description provided.'}
-        </p>
+        <div className="task-body">
+          <div className="task-title-row">
+            <h4 className="task-title-text">{task.title}</h4>
+            <span className={`priority-tag ${priorityClass}`}>
+              <span className="priority-indicator"></span>
+              {task.priority || 'medium'}
+            </span>
+          </div>
 
-        <span className={`priority ${task.priority || 'medium'}`}>
-          {task.priority || 'medium'} priority
-        </span>
+          <p className="task-desc-text">
+            {task.description || 'No description provided.'}
+          </p>
+        </div>
       </div>
 
-      <div className="task-actions">
+      <div className="task-card-actions">
         <button
           type="button"
-          className="secondary"
+          className="action-btn edit-btn"
           onClick={() => onEdit(task)}
+          title="Edit task"
         >
-          Edit
+          <span>✏️</span>
+          <span className="btn-label">Edit</span>
         </button>
 
         <button
           type="button"
-          className="danger"
+          className="action-btn delete-btn"
           onClick={() => onDelete(task)}
+          title="Delete task"
         >
-          Delete
+          <span>🗑️</span>
+          <span className="btn-label">Delete</span>
         </button>
       </div>
     </article>

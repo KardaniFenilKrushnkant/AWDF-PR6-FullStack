@@ -35,7 +35,7 @@ export default function Home({
 
       if (filter === 'completed') return task.completed;
       if (filter === 'pending') return !task.completed;
-      if (filter === 'high') return task.priority === 'high';
+      if (filter === 'high') return task.priority?.toLowerCase() === 'high';
       return true;
     });
   }, [tasks, filter, searchTerm]);
@@ -49,180 +49,259 @@ export default function Home({
   }, [tasks]);
 
   return (
-    <div className="home-page">
-      <header className="hero">
-        <div className="hero-text">
-          <p className="badge">MERN Full-Stack &bull; React 19 &bull; Vite</p>
-          <h1>Manage Your Tasks With Speed &amp; Ease</h1>
-          <p className="subtitle">
-            Welcome back, <strong>{user?.name || user?.username}</strong>! Organize your workflow,
-            track deadlines, and measure frontend performance.
+    <div className="home-dashboard">
+      {/* Executive Welcome & KPI Row */}
+      <header className="dashboard-hero">
+        <div className="hero-content">
+          <div className="hero-badge">
+            <span className="badge-pulse"></span>
+            <span>Task Management &bull; React 19 + Vite</span>
+          </div>
+          <h1 className="hero-heading">
+            Welcome back, <span className="highlight-name">{user?.name || user?.username || 'Fenil'}</span>
+          </h1>
+          <p className="hero-subtext">
+            Track daily priorities, manage agile milestones, and monitor frontend performance optimizations.
           </p>
         </div>
 
-        <div className="stats-grid">
-          <div className="stat-card">
-            <strong>{stats.total}</strong>
-            <span>Total Tasks</span>
+        {/* 4 KPI Cards */}
+        <div className="kpi-banner-grid">
+          <div className="kpi-mini-card">
+            <div className="kpi-icon-box bg-blue">
+              <span>📋</span>
+            </div>
+            <div className="kpi-details">
+              <span className="kpi-label">Total Tasks</span>
+              <strong className="kpi-number">{stats.total}</strong>
+            </div>
           </div>
-          <div className="stat-card">
-            <strong style={{ color: '#10b981' }}>{stats.completed}</strong>
-            <span>Completed</span>
+
+          <div className="kpi-mini-card">
+            <div className="kpi-icon-box bg-amber">
+              <span>⏳</span>
+            </div>
+            <div className="kpi-details">
+              <span className="kpi-label">In Progress</span>
+              <strong className="kpi-number text-amber">{stats.pending}</strong>
+            </div>
           </div>
-          <div className="stat-card">
-            <strong style={{ color: '#f59e0b' }}>{stats.pending}</strong>
-            <span>Pending</span>
+
+          <div className="kpi-mini-card">
+            <div className="kpi-icon-box bg-emerald">
+              <span>✅</span>
+            </div>
+            <div className="kpi-details">
+              <span className="kpi-label">Completed</span>
+              <strong className="kpi-number text-emerald">{stats.completed}</strong>
+            </div>
           </div>
-          <div className="stat-card">
-            <strong style={{ color: '#5146e5' }}>{stats.completionRate}%</strong>
-            <span>Done Rate</span>
+
+          <div className="kpi-mini-card">
+            <div className="kpi-icon-box bg-indigo">
+              <span>📈</span>
+            </div>
+            <div className="kpi-details">
+              <span className="kpi-label">Completion</span>
+              <strong className="kpi-number text-indigo">{stats.completionRate}%</strong>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Task Creation & Editing Panel */}
-      <section className="panel">
-        <h2>{editingId ? '✏️ Edit Task' : '➕ Create a Task'}</h2>
-
-        <form onSubmit={handleSubmit} className="task-form">
-          <label>
-            Task title
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Implement route-based lazy loading"
-              required
-              maxLength={120}
-            />
-          </label>
-
-          <label>
-            Description
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Detailed description of the task..."
-              rows={3}
-            />
-          </label>
-
-          <label>
-            Priority
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-            >
-              <option value="low">Low Priority</option>
-              <option value="medium">Medium Priority</option>
-              <option value="high">High Priority</option>
-            </select>
-          </label>
-
-          <div className="form-actions">
-            <button type="submit" disabled={saving}>
-              {saving
-                ? 'Saving...'
-                : editingId
-                ? 'Save Changes'
-                : 'Add Task'}
-            </button>
-
+      {/* Main Two-Column or Stacked Dashboard Grid */}
+      <div className="dashboard-grid">
+        {/* Left / Top: Task Creation & Edit Form */}
+        <section className="form-card-panel">
+          <div className="panel-header">
+            <div className="panel-title-wrap">
+              <span className="panel-icon">{editingId ? '✏️' : '✨'}</span>
+              <h3>{editingId ? 'Edit Task' : 'Create New Task'}</h3>
+            </div>
             {editingId && (
-              <button
-                type="button"
-                className="secondary"
-                onClick={resetForm}
-              >
-                Cancel
-              </button>
+              <span className="editing-badge">Editing Task #{editingId.slice(-4)}</span>
             )}
           </div>
-        </form>
-      </section>
 
-      {/* Task Listing Section */}
-      <section className="tasks-section">
-        <div className="section-heading">
-          <h2>Your Task Board</h2>
+          <form onSubmit={handleSubmit} className="modern-task-form">
+            <div className="form-field">
+              <label htmlFor="task-title">
+                Task Title <span className="req">*</span>
+              </label>
+              <input
+                id="task-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Implement route-based lazy loading"
+                required
+                maxLength={120}
+              />
+            </div>
 
-          <div className="heading-actions">
+            <div className="form-field">
+              <label htmlFor="task-desc">Description</label>
+              <textarea
+                id="task-desc"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Add context, deadlines, or acceptance criteria..."
+                rows={3}
+              />
+            </div>
+
+            <div className="form-field">
+              <label>Priority Level</label>
+              <div className="priority-select-pills">
+                {['low', 'medium', 'high'].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    className={`priority-pill ${priority === p ? `selected ${p}` : ''}`}
+                    onClick={() => setPriority(p)}
+                  >
+                    <span className={`pill-dot ${p}`}></span>
+                    {p.charAt(0).toUpperCase() + p.slice(1)} Priority
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-btn-actions">
+              <button type="submit" className="btn-primary" disabled={saving}>
+                {saving ? (
+                  <span className="btn-loading">
+                    <span className="mini-spin"></span> Saving...
+                  </span>
+                ) : editingId ? (
+                  '💾 Update Task'
+                ) : (
+                  '➕ Add Task'
+                )}
+              </button>
+
+              {editingId && (
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={resetForm}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+
+        {/* Right / Bottom: Task Board */}
+        <section className="task-board-panel">
+          <div className="board-header">
+            <div className="board-title-group">
+              <h2>Task Board</h2>
+              <span className="board-count-pill">{filteredTasks.length} tasks</span>
+            </div>
+
             <button
               type="button"
-              className="secondary refresh"
+              className="refresh-btn"
               onClick={loadTasks}
               disabled={loading}
+              title="Sync tasks with backend"
             >
-              {loading ? 'Refreshing...' : '🔄 Refresh'}
-            </button>
-          </div>
-        </div>
-
-        {/* Filter and Search Bar */}
-        <div className="task-controls">
-          <div className="filter-chips">
-            <button
-              type="button"
-              className={`chip ${filter === 'all' ? 'active' : ''}`}
-              onClick={() => setFilter('all')}
-            >
-              All ({tasks.length})
-            </button>
-            <button
-              type="button"
-              className={`chip ${filter === 'pending' ? 'active' : ''}`}
-              onClick={() => setFilter('pending')}
-            >
-              Pending ({stats.pending})
-            </button>
-            <button
-              type="button"
-              className={`chip ${filter === 'completed' ? 'active' : ''}`}
-              onClick={() => setFilter('completed')}
-            >
-              Completed ({stats.completed})
-            </button>
-            <button
-              type="button"
-              className={`chip ${filter === 'high' ? 'active' : ''}`}
-              onClick={() => setFilter('high')}
-            >
-              High Priority
+              <span className={`refresh-icon ${loading ? 'spinning' : ''}`}>🔄</span>
+              <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
             </button>
           </div>
 
-          <input
-            type="text"
-            className="search-input"
-            placeholder="🔍 Search tasks..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-
-        {message && <p className="notice success">{message}</p>}
-        {error && <p className="notice error">Error: {error}</p>}
-
-        {loading ? (
-          <p className="empty">Loading tasks from backend...</p>
-        ) : filteredTasks.length === 0 ? (
-          <div className="empty">
-            <h3>No tasks match your filter</h3>
-            <p>Add a task or adjust the search/filter criteria above.</p>
-          </div>
-        ) : (
-          <div className="task-list">
-            {filteredTasks.map((task) => (
-              <TaskItem
-                key={task._id}
-                task={task}
-                onToggle={toggleCompleted}
-                onEdit={startEditing}
-                onDelete={handleDelete}
+          {/* Search & Filter Toolbar */}
+          <div className="board-toolbar">
+            <div className="search-wrap">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search tasks by title or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
-            ))}
+              {searchTerm && (
+                <button
+                  type="button"
+                  className="clear-search-btn"
+                  onClick={() => setSearchTerm('')}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="filter-chip-group">
+              <button
+                type="button"
+                className={`filter-chip ${filter === 'all' ? 'active' : ''}`}
+                onClick={() => setFilter('all')}
+              >
+                All ({tasks.length})
+              </button>
+              <button
+                type="button"
+                className={`filter-chip ${filter === 'pending' ? 'active' : ''}`}
+                onClick={() => setFilter('pending')}
+              >
+                Pending ({stats.pending})
+              </button>
+              <button
+                type="button"
+                className={`filter-chip ${filter === 'completed' ? 'active' : ''}`}
+                onClick={() => setFilter('completed')}
+              >
+                Done ({stats.completed})
+              </button>
+              <button
+                type="button"
+                className={`filter-chip ${filter === 'high' ? 'active' : ''}`}
+                onClick={() => setFilter('high')}
+              >
+                High Priority
+              </button>
+            </div>
           </div>
-        )}
-      </section>
+
+          {message && <div className="banner success">{message}</div>}
+          {error && <div className="banner error">{error}</div>}
+
+          {/* Task Items List */}
+          {loading ? (
+            <div className="loading-state-card">
+              <div className="loading-spinner"></div>
+              <p>Fetching tasks from server...</p>
+            </div>
+          ) : filteredTasks.length === 0 ? (
+            <div className="empty-state-card">
+              <div className="empty-icon-wrap">📋</div>
+              <h3>No tasks found</h3>
+              <p>
+                {searchTerm
+                  ? `No tasks match your search "${searchTerm}". Try a different keyword.`
+                  : filter !== 'all'
+                  ? `There are no ${filter} tasks right now.`
+                  : 'Get started by creating your first task using the form above!'}
+              </p>
+            </div>
+          ) : (
+            <div className="task-cards-container">
+              {filteredTasks.map((task) => (
+                <TaskItem
+                  key={task._id}
+                  task={task}
+                  onToggle={toggleCompleted}
+                  onEdit={startEditing}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
