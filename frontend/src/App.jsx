@@ -1,7 +1,10 @@
-
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, lazy, Suspense } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Login';
 import Toast from './Toast';
+import Navbar from './components/Navbar';
+import LoadingFallback from './components/LoadingFallback';
+import DelayedFallback from './components/DelayedFallback';
 import {
   getTasks,
   createTask,
@@ -9,6 +12,13 @@ import {
   deleteTask,
 } from './api';
 import './App.css';
+
+// STEP 3: Route-based code splitting using React.lazy()
+// Core Practical 8 requirements: Apply React.lazy() and Suspense to at least Projects and Contact routes
+const Home = lazy(() => import('./pages/Home'));
+const Projects = lazy(() => import('./pages/Projects'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const Contact = lazy(() => import('./pages/Contact'));
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -104,7 +114,7 @@ function App() {
     }
   }, [user, loadTasks]);
 
-  async function handleSubmit(event) {
+  const handleSubmit = useCallback(async (event) => {
     event.preventDefault();
 
     setError('');
@@ -142,9 +152,9 @@ function App() {
     } finally {
       setSaving(false);
     }
-  }
+  }, [editingId, title, description, priority, showToast]);
 
-  function startEditing(task) {
+  const startEditing = useCallback((task) => {
     setEditingId(task._id);
     setTitle(task.title || '');
     setDescription(task.description || '');
@@ -156,9 +166,9 @@ function App() {
       top: 0,
       behavior: 'smooth',
     });
-  }
+  }, []);
 
-  async function toggleCompleted(task) {
+  const toggleCompleted = useCallback(async (task) => {
     setError('');
     setMessage('');
 
@@ -177,9 +187,9 @@ function App() {
     } catch (err) {
       showToast(err.message, 'error');
     }
-  }
+  }, [showToast]);
 
-  async function handleDelete(task) {
+  const handleDelete = useCallback(async (task) => {
     if (!window.confirm(`Delete "${task.title}"?`)) {
       return;
     }
@@ -202,221 +212,75 @@ function App() {
     } catch (err) {
       showToast(err.message, 'error');
     }
-  }
+  }, [editingId, showToast]);
 
-  // Show login or registration before the task manager.
+  // Show login before task manager if unauthenticated
   if (!user) {
     return <Login onLogin={handleLogin} />;
   }
 
   return (
-    <main className="app">
-      <Toast
-        message={toast.message}
-        type={toast.type}
-        onClose={closeToast}
-      />
+    <div className="app-root">
+      <Navbar user={user} onLogout={handleLogout} />
 
-      <header className="hero">
-        <p className="eyebrow">
-          TASK MANAGEMENT · FULL STACK APPLICATION
-        </p>
+      <main className="app">
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={closeToast}
+        />
 
-        <h1>Task Manager</h1>
-
-        <p className="subtitle">
-          Manage your tasks with React, Express and MongoDB.
-        </p>
-
-        <div className="user-bar">
-          <p>
-            Signed in as <strong>{user.email}</strong>
-          </p>
-
-          <button
-            type="button"
-            className="secondary"
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
-        </div>
-
-        <div className="stats">
-          <div>
-            <strong>{tasks.length}</strong>
-            <span>Total tasks</span>
-          </div>
-
-          <div>
-            <strong>
-              {tasks.filter((task) => task.completed).length}
-            </strong>
-            <span>Completed</span>
-          </div>
-
-          <div>
-            <strong>
-              {tasks.filter((task) => !task.completed).length}
-            </strong>
-            <span>Pending</span>
-          </div>
-        </div>
-      </header>
-
-      <section className="panel">
-        <h2>{editingId ? 'Edit Task' : 'Create a Task'}</h2>
-
-        <form onSubmit={handleSubmit} className="task-form">
-          <label>
-            Task title
-            <input
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="e.g. Complete an assignment"
-              required
-              maxLength={120}
-            />
-          </label>
-
-          <label>
-            Description
-            <textarea
-              value={description}
-              onChange={(event) =>
-                setDescription(event.target.value)
+        {/* STEP 4: Wrap the Routes block with Suspense and a meaningful Fallback UI */}
+        {/* Uses DelayedFallback (300ms minimum-delay to avoid UI flicker on fast networks) */}
+        <Suspense fallback={<DelayedFallback delayMs={200} message="Loading requested route chunk..." />}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <Home
+                  user={user}
+                  tasks={tasks}
+                  loading={loading}
+                  saving={saving}
+                  error={error}
+                  message={message}
+                  editingId={editingId}
+                  title={title}
+                  setTitle={setTitle}
+                  description={description}
+                  setDescription={setDescription}
+                  priority={priority}
+                  setPriority={setPriority}
+                  handleSubmit={handleSubmit}
+                  resetForm={resetForm}
+                  startEditing={startEditing}
+                  toggleCompleted={toggleCompleted}
+                  handleDelete={handleDelete}
+                  loadTasks={loadTasks}
+                />
               }
-              placeholder="What needs to be done?"
-              rows={3}
             />
-          </label>
+            <Route
+              path="/projects"
+              element={<Projects tasks={tasks} />}
+            />
+            <Route
+              path="/analytics"
+              element={<Analytics tasks={tasks} />}
+            />
+            <Route
+              path="/contact"
+              element={<Contact />}
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
 
-          <label>
-            Priority
-            <select
-              value={priority}
-              onChange={(event) => setPriority(event.target.value)}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </label>
-
-          <div className="form-actions">
-            <button type="submit" disabled={saving}>
-              {saving
-                ? 'Saving...'
-                : editingId
-                  ? 'Save Changes'
-                  : 'Add Task'}
-            </button>
-
-            {editingId && (
-              <button
-                type="button"
-                className="secondary"
-                onClick={resetForm}
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-        </form>
-      </section>
-
-      <section className="tasks-section">
-        <div className="section-heading">
-          <h2>Your Tasks</h2>
-
-          <button
-            type="button"
-            className="secondary refresh"
-            onClick={loadTasks}
-            disabled={loading}
-          >
-            {loading ? 'Loading...' : 'Refresh'}
-          </button>
-        </div>
-
-        {message && (
-          <p className="notice success">{message}</p>
-        )}
-
-        {error && (
-          <p className="notice error">Error: {error}</p>
-        )}
-
-        {loading ? (
-          <p className="empty">Loading tasks...</p>
-        ) : tasks.length === 0 ? (
-          <div className="empty">
-            <h3>No tasks yet</h3>
-            <p>Add your first task using the form above.</p>
-          </div>
-        ) : (
-          <div className="task-list">
-            {tasks.map((task) => (
-              <article
-                className={`task-card ${
-                  task.completed ? 'completed' : ''
-                }`}
-                key={task._id}
-              >
-                <div className="task-main">
-                  <label className="check-row">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(task.completed)}
-                      onChange={() => toggleCompleted(task)}
-                    />
-
-                    <span className="task-title">
-                      {task.title}
-                    </span>
-                  </label>
-
-                  <p className="task-description">
-                    {task.description ||
-                      'No description provided.'}
-                  </p>
-
-                  <span
-                    className={`priority ${
-                      task.priority || 'medium'
-                    }`}
-                  >
-                    {task.priority || 'medium'} priority
-                  </span>
-                </div>
-
-                <div className="task-actions">
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() => startEditing(task)}
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    type="button"
-                    className="danger"
-                    onClick={() => handleDelete(task)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <footer>
-        Secure Task Management · Built for Productivity
-      </footer>
-    </main>
+        <footer>
+          Charotar University of Science and Technology &bull; ITUE301 Practical 8: Performance Optimization &amp; Lazy Loading
+        </footer>
+      </main>
+    </div>
   );
 }
 

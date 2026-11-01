@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 420" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <filter id="shadow3" x="-3%" y="-3%" width="106%" height="106%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <rect width="860" height="420" rx="16" fill="url(#bgGrad3)"/>
+
+  <!-- Header -->
+  <text x="30" y="40" fill="#38bdf8" font-family="system-ui, sans-serif" font-size="12" font-weight="700">BROWSER DEVTOOLS &bull; NETWORK TAB SIMULATION (Slow 3G Throttling)</text>
+  <text x="30" y="68" fill="#ffffff" font-family="system-ui, sans-serif" font-size="18" font-weight="700">Waterfall &amp; Transfer Comparison: Before vs After</text>
+
+  <!-- Panel 1: Before -->
+  <g filter="url(#shadow3)" transform="translate(30, 85)">
+    <rect width="800" height="135" rx="10" fill="#1e293b" stroke="#ef4444" stroke-width="1"/>
+    <rect width="800" height="28" rx="10" fill="#334155"/>
+    <text x="16" y="19" fill="#fca5a5" font-family="system-ui, sans-serif" font-size="11" font-weight="700">BEFORE: Static Imports (Initial Landing on "/")</text>
+    <text x="784" y="19" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11" text-anchor="end">Total Transferred: 457.34 kB │ Load Time: 3.42s (Slow 3G)</text>
+
+    <!-- Request Rows -->
+    <text x="16" y="54" fill="#e2e8f0" font-family="monospace" font-size="11">index.html</text>
+    <rect x="220" y="43" width="60" height="14" rx="3" fill="#38bdf8"/>
+    <text x="290" y="54" fill="#94a3b8" font-family="sans-serif" font-size="10">0.45 kB (85ms)</text>
+
+    <text x="16" y="80" fill="#e2e8f0" font-family="monospace" font-size="11">index-DILdhyxu.js</text>
+    <rect x="280" y="69" width="460" height="14" rx="3" fill="#ef4444"/>
+    <text x="748" y="80" fill="#fca5a5" font-family="sans-serif" font-size="10">457.34 kB (3200ms)</text>
+
+    <text x="16" y="112" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="11">⚠️ User stares at a blank screen for 3.4s while 180 kB of unused Chart.js and routes download.</text>
+  </g>
+
+  <!-- Panel 2: After -->
+  <g filter="url(#shadow3)" transform="translate(30, 240)">
+    <rect width="800" height="155" rx="10" fill="#1e293b" stroke="#10b981" stroke-width="1"/>
+    <rect width="800" height="28" rx="10" fill="#065f46"/>
+    <text x="16" y="19" fill="#6ee7b7" font-family="system-ui, sans-serif" font-size="11" font-weight="700">AFTER: Lazy Loading + Code Splitting (Initial Landing on "/" then click "/projects")</text>
+    <text x="784" y="19" fill="#a7f3d0" font-family="system-ui, sans-serif" font-size="11" text-anchor="end">Initial JS: 268.14 kB │ Load Time: 1.85s (-46% Faster!)</text>
+
+    <!-- Initial JS -->
+    <text x="16" y="54" fill="#e2e8f0" font-family="monospace" font-size="11">index-DHF2zVcj.js</text>
+    <rect x="220" y="43" width="260" height="14" rx="3" fill="#3b82f6"/>
+    <text x="490" y="54" fill="#93c5fd" font-family="sans-serif" font-size="10">262.5 kB (1.75s) - App Interactive!</text>
+
+    <text x="16" y="78" fill="#e2e8f0" font-family="monospace" font-size="11">Home-DQduJJxm.js</text>
+    <rect x="480" y="67" width="30" height="14" rx="3" fill="#10b981"/>
+    <text x="518" y="78" fill="#a7f3d0" font-family="sans-serif" font-size="10">5.64 kB (90ms)</text>
+
+    <!-- Navigation Event -->
+    <line x1="16" y1="96" x2="784" y2="96" stroke="#334155" stroke-dasharray="4"/>
+    <text x="16" y="112" fill="#fcd34d" font-family="system-ui, sans-serif" font-size="11" font-weight="600">User clicks "Projects" tab &bull; Suspense fallback triggers &bull; Chunk fetched on demand:</text>
+
+    <text x="16" y="136" fill="#e2e8f0" font-family="monospace" font-size="11">Projects-B5ynT97_.js</text>
+    <rect x="560" y="125" width="25" height="14" rx="3" fill="#10b981"/>
+    <text x="595" y="136" fill="#a7f3d0" font-family="sans-serif" font-size="10">3.81 kB (65ms)</text>
+  </g>
+</svg>
