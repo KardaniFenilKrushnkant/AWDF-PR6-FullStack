@@ -2,18 +2,29 @@
 const BASE_URL = 'http://localhost:3000';
 
 async function request(endpoint, options = {}) {
+  const token = localStorage.getItem('token');
+
+  const headers = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  // Send the login token with authenticated requests.
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
     ...options,
+    headers,
   });
 
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(data?.message || 'Something went wrong');
+    throw new Error(
+      data?.message || `Request failed (${response.status})`
+    );
   }
 
   return data;

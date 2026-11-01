@@ -1,5 +1,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
+import Login from './Login';
 import Toast from './Toast';
 import {
   getTasks,
@@ -10,6 +11,21 @@ import {
 import './App.css';
 
 function App() {
+  const [user, setUser] = useState(() => {
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+
+    if (!token || !savedUser) return null;
+
+    try {
+      return JSON.parse(savedUser);
+    } catch {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return null;
+    }
+  });
+
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -19,6 +35,7 @@ function App() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [editingId, setEditingId] = useState(null);
+
   const [toast, setToast] = useState({
     message: '',
     type: 'success',
@@ -32,7 +49,30 @@ function App() {
     setToast({ message: '', type: 'success' });
   }, []);
 
-  async function loadTasks() {
+  function resetForm() {
+    setTitle('');
+    setDescription('');
+    setPriority('medium');
+    setEditingId(null);
+  }
+
+  function handleLogin(userData) {
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+
+    setUser(null);
+    setTasks([]);
+    setError('');
+    setMessage('');
+    resetForm();
+  }
+
+  const loadTasks = useCallback(async () => {
     setLoading(true);
     setError('');
 
@@ -41,24 +81,32 @@ function App() {
       setTasks(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
+
+      const errorMessage = err.message.toLowerCase();
+
+      if (
+        errorMessage.includes('token') ||
+        errorMessage.includes('unauthorized')
+      ) {
+        handleLogout();
+      }
     } finally {
       setLoading(false);
     }
-  }
-
-  useEffect(() => {
-    loadTasks();
   }, []);
 
-  function resetForm() {
-    setTitle('');
-    setDescription('');
-    setPriority('medium');
-    setEditingId(null);
-  }
+  useEffect(() => {
+    if (user) {
+      loadTasks();
+    } else {
+      setTasks([]);
+      setLoading(false);
+    }
+  }, [user, loadTasks]);
 
   async function handleSubmit(event) {
     event.preventDefault();
+
     setError('');
     setMessage('');
     setSaving(true);
@@ -83,6 +131,7 @@ function App() {
         showToast('Task updated successfully!');
       } else {
         const created = await createTask(taskData);
+
         setTasks((current) => [created, ...current]);
         showToast('Task created successfully!');
       }
@@ -102,7 +151,11 @@ function App() {
     setPriority(task.priority || 'medium');
     setMessage('');
     setError('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
   }
 
   async function toggleCompleted(task) {
@@ -127,7 +180,9 @@ function App() {
   }
 
   async function handleDelete(task) {
-    if (!window.confirm(`Delete "${task.title}"?`)) return;
+    if (!window.confirm(`Delete "${task.title}"?`)) {
+      return;
+    }
 
     setError('');
     setMessage('');
@@ -149,6 +204,11 @@ function App() {
     }
   }
 
+  // Show login or registration before the task manager.
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <main className="app">
       <Toast
@@ -159,24 +219,42 @@ function App() {
 
       <header className="hero">
         <p className="eyebrow">
-          PRACTICAL 6 · FULL STACK DEVELOPMENT
+          TASK MANAGEMENT · FULL STACK APPLICATION
         </p>
+
         <h1>Task Manager</h1>
+
         <p className="subtitle">
           Manage your tasks with React, Express and MongoDB.
         </p>
+
+        <div className="user-bar">
+          <p>
+            Signed in as <strong>{user.email}</strong>
+          </p>
+
+          <button
+            type="button"
+            className="secondary"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
+        </div>
 
         <div className="stats">
           <div>
             <strong>{tasks.length}</strong>
             <span>Total tasks</span>
           </div>
+
           <div>
             <strong>
               {tasks.filter((task) => task.completed).length}
             </strong>
             <span>Completed</span>
           </div>
+
           <div>
             <strong>
               {tasks.filter((task) => !task.completed).length}
@@ -195,7 +273,7 @@ function App() {
             <input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              placeholder="e.g. Complete Practical 6"
+              placeholder="e.g. Complete an assignment"
               required
               maxLength={120}
             />
@@ -205,7 +283,9 @@ function App() {
             Description
             <textarea
               value={description}
-              onChange={(event) => setDescription(event.target.value)}
+              onChange={(event) =>
+                setDescription(event.target.value)
+              }
               placeholder="What needs to be done?"
               rows={3}
             />
@@ -248,18 +328,24 @@ function App() {
       <section className="tasks-section">
         <div className="section-heading">
           <h2>Your Tasks</h2>
+
           <button
             type="button"
             className="secondary refresh"
             onClick={loadTasks}
             disabled={loading}
           >
-            Refresh
+            {loading ? 'Loading...' : 'Refresh'}
           </button>
         </div>
 
-        {message && <p className="notice success">{message}</p>}
-        {error && <p className="notice error">Error: {error}</p>}
+        {message && (
+          <p className="notice success">{message}</p>
+        )}
+
+        {error && (
+          <p className="notice error">Error: {error}</p>
+        )}
 
         {loading ? (
           <p className="empty">Loading tasks...</p>
@@ -272,7 +358,9 @@ function App() {
           <div className="task-list">
             {tasks.map((task) => (
               <article
-                className={`task-card ${task.completed ? 'completed' : ''}`}
+                className={`task-card ${
+                  task.completed ? 'completed' : ''
+                }`}
                 key={task._id}
               >
                 <div className="task-main">
@@ -282,15 +370,21 @@ function App() {
                       checked={Boolean(task.completed)}
                       onChange={() => toggleCompleted(task)}
                     />
-                    <span className="task-title">{task.title}</span>
+
+                    <span className="task-title">
+                      {task.title}
+                    </span>
                   </label>
 
                   <p className="task-description">
-                    {task.description || 'No description provided.'}
+                    {task.description ||
+                      'No description provided.'}
                   </p>
 
                   <span
-                    className={`priority ${task.priority || 'medium'}`}
+                    className={`priority ${
+                      task.priority || 'medium'
+                    }`}
                   >
                     {task.priority || 'medium'} priority
                   </span>
@@ -320,7 +414,7 @@ function App() {
       </section>
 
       <footer>
-        Advanced Web Development Frameworks · Practical 6
+        Secure Task Management · Built for Productivity
       </footer>
     </main>
   );

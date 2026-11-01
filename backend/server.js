@@ -1,4 +1,5 @@
-
+const authRoutes = require('./routes/auth');
+const auth = require('./middleware/auth');
 const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config();
@@ -9,6 +10,18 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/auth', authRoutes);
+
+app.get('/test-auth', (req, res) => {
+  res.json({ message: 'Auth route is working!' });
+});
+
+// app.get('/test-auth', (req, res) => {
+//   res.status(200).json({
+//     message: 'Auth route setup is working'
+//   });
+// });
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
@@ -24,7 +37,7 @@ mongoose.connect(process.env.MONGO_URI)
   });
 
 // Create task
-app.post('/tasks', async (req, res, next) => {
+app.post('/tasks', auth, async (req, res, next) => {
   try {
     const task = await Task.create(req.body);
     res.status(201).json(task);
