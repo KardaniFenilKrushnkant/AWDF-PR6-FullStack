@@ -4,33 +4,55 @@
 
 ---
 
+## ⚡ Practical 9: In-Memory Caching and Query Optimization (node-cache)
+
+### Overview
+Practical 9 implements server-side in-memory caching in the Node.js/Express backend using `node-cache`. It caches high-frequency read queries (`GET /tasks`, `GET /tasks/:id`), guarantees strict cache consistency with invalidation hooks across all mutations (`POST`, `PUT`, `DELETE`), and provides live cache metrics via `/cache/stats`.
+
+Comprehensive practical report: [`docs/PRACTICAL_9_REPORT.md`](./docs/PRACTICAL_9_REPORT.md).
+
+### Architecture & Caching Flow
+```text
+GET /tasks request
+  │
+  ▼
+Cache check (node-cache: key 'all_tasks')
+  ├── HIT  ──► Return cached data immediately (Response Time: ~3.1ms, Header X-Cache: HIT)
+  └── MISS ──► Query MongoDB ──► Store in cache (TTL: 60s) ──► Return data (X-Cache: MISS)
+
+POST/PUT/DELETE /tasks
+  │
+  ▼
+Write to MongoDB ──► Invalidate cache keys ('all_tasks', 'task_:id') ──► Stale data is never served
+```
+
+### Empirical Performance Comparison (3 Sample Benchmark)
+
+| Test Condition | Sample 1 | Sample 2 | Sample 3 | Average Response Time | Cache Header (`X-Cache`) | Database Impact |
+|---|---|---|---|---|---|---|
+| **Uncached (Direct MongoDB Read)** | 12.98 ms | 8.07 ms | 7.97 ms | **9.67 ms** | `MISS` | Reads from MongoDB collection |
+| **Cached (`node-cache` In-Memory)** | 5.18 ms | 3.53 ms | 3.10 ms | **3.94 ms** | `HIT` | 0 database queries (Served from RAM) |
+
+**Performance Improvement:**
+- **Speedup:** **2.5x Faster** API responses.
+- **Latency Reduction:** **59.3% drop** in response latency.
+- **Database Load:** Eliminates 100% of repeated read roundtrips during the 60-second TTL window.
+
+### Key Features Implemented in Practical 9:
+1. **In-Memory Caching:** Initialized `node-cache` instance with `stdTTL: 60s` in [`backend/cache.js`](./backend/cache.js).
+2. **Collection Caching (`GET /tasks`):** Evaluates `cache.get('all_tasks')` before hitting the database.
+3. **Single-Item Caching (`GET /tasks/:id`):** Caches individual task records under `task_${id}` (Supplementary Problem 1).
+4. **Cache Invalidation on Mutation:** Immediately deletes `all_tasks` and `task_${id}` upon `POST`, `PUT`, or `DELETE`.
+5. **Cache Instrumentation & Debug Endpoint:** Real-time metrics at `GET /cache/stats` tracking hits, misses, hit rate, and active keys (Supplementary Problem 2).
+
+---
+
 ## ⚡ Practical 8: Performance Optimization & Lazy Loading in React
 
 ### Overview
 Practical 8 enhances the React frontend of the full-stack Task Management application by implementing **route-based code splitting** and **component-level lazy loading** using `React.lazy()` and `<Suspense>`. This significantly reduces initial bundle size and accelerates First Contentful Paint (FCP) and Time to Interactive (TTI).
 
-Comprehensive report and documentation: [`docs/PRACTICAL_8_REPORT.md`](./docs/PRACTICAL_8_REPORT.md).
-
-### Architecture & Code Splitting Diagram
-
-#### Before Optimization (Single Monolithic Bundle):
-All routes and heavy libraries were packaged into a single JavaScript file, loaded upfront on the initial visit.
-```text
-main.bundle.js ──────────────► [Home][Projects][Contact][Analytics][Chart.js] all loaded upfront (457 kB)
-```
-![Before Architecture](./docs/architecture-before.svg)
-
-#### After Optimization (Code-Split on Demand):
-Routes and heavy third-party libraries are decoupled into isolated chunks requested strictly when navigated:
-```text
-main.bundle.js ──► loads on first visit (262 kB core shell)
-Home.chunk.js ──► loads on first visit for route /
-Projects.chunk.js ─► loads ONLY when /projects is visited
-Contact.chunk.js ──► loads ONLY when /contact is visited
-Analytics.chunk.js ─► loads ONLY when /analytics is visited
-chart-vendor.js ──► loads ONLY when chart visualizer is rendered
-```
-![After Architecture](./docs/architecture-after.svg)
+Comprehensive report: [`docs/PRACTICAL_8_REPORT.md`](./docs/PRACTICAL_8_REPORT.md).
 
 ### Before vs After Performance Comparison (Vite Build Output)
 
@@ -45,15 +67,6 @@ chart-vendor.js ──► loads ONLY when chart visualizer is rendered
 | **Number of JS Chunks** | 1 Monolithic File | 7 Discrete Chunks | Independent caching & delivery |
 | **Simulated Load Time (Slow 3G)** | ~3.42s | ~1.85s | **~46% Faster Initial Paint** |
 
-![Network Timeline](./docs/network-timeline.svg)
-
-### Key Features Implemented in Practical 8
-1. **Route-Based Code Splitting:** Applied `React.lazy()` and `<Suspense>` across all primary routes (`/`, `/projects`, `/analytics`, `/contact`).
-2. **Accessible Suspense Fallback UI:** Built `components/LoadingFallback.jsx` with an animated spinner, status banner, and skeleton loading bars.
-3. **Supplementary 1 (Heavy Component Splitting):** Lazy-loaded `Chart.js` & `react-chartjs-2` (`TaskAnalyticsChart.jsx`) within `Analytics.jsx`, keeping heavy charting binaries out of the core bundle.
-4. **Supplementary 2 (Flicker Prevention):** Built `components/DelayedFallback.jsx` with a 300ms threshold to prevent visual flicker on high-speed connections.
-5. **Supplementary 3 (DevTools Profiler Optimization):** Extracted `components/TaskItem.jsx` with `React.memo` and `useCallback` to prevent unnecessary task card re-renders while typing in the task form.
-
 ---
 
 ## 🛠️ Project Structure
@@ -62,112 +75,74 @@ chart-vendor.js ──► loads ONLY when chart visualizer is rendered
 AWDF-PR6-FullStack/
 ├── backend/
 │   ├── models/
+│   │   ├── Task.js
+│   │   └── User.js
 │   ├── routes/
+│   │   └── auth.js
 │   ├── middleware/
-│   ├── server.js
+│   │   └── auth.js
+│   ├── cache.js                 # Practical 9: node-cache wrapper & metrics tracker
+│   ├── benchmark_caching.js     # Practical 9: Automated 3-sample response benchmark
+│   ├── server.js                # Express API with caching & invalidation
 │   └── package.json
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── DelayedFallback.jsx
 │   │   │   ├── LoadingFallback.jsx
-│   │   │   ├── LoadingFallback.css
 │   │   │   ├── Navbar.jsx
-│   │   │   ├── Navbar.css
 │   │   │   ├── TaskAnalyticsChart.jsx
-│   │   │   ├── TaskAnalyticsChart.css
 │   │   │   └── TaskItem.jsx
 │   │   ├── pages/
 │   │   │   ├── Analytics.jsx
-│   │   │   ├── Analytics.css
 │   │   │   ├── Contact.jsx
-│   │   │   ├── Contact.css
 │   │   │   ├── Home.jsx
-│   │   │   ├── Projects.jsx
-│   │   │   └── Projects.css
+│   │   │   └── Projects.jsx
 │   │   ├── api.js
 │   │   ├── App.jsx
-│   │   ├── App.css
-│   │   ├── main.jsx
-│   │   └── index.css
+│   │   └── main.jsx
 │   ├── vite.config.js
 │   └── package.json
 ├── docs/
-│   ├── architecture-before.svg
-│   ├── architecture-after.svg
-│   ├── network-timeline.svg
-│   └── PRACTICAL_8_REPORT.md
+│   ├── screenshots_p9/          # Postman & terminal evidence for Practical 9
+│   ├── screenshots/             # UI & DevTools evidence for Practical 8
+│   ├── PRACTICAL_8_REPORT.md
+│   └── PRACTICAL_9_REPORT.md
+├── AWDF_Practical_8_D25IT136.docx
+├── AWDF_Practical_9_D25IT136.docx
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## 🚀 Installation & Local Development
+## 🚀 Running the Project & Testing Caching
 
-### 1. Clone the Repository
-```bash
-git clone https://github.com/KardaniFenilKrushnkant/AWDF-PR6-FullStack.git
-cd AWDF-PR6-FullStack
-```
-
-### 2. Set Up and Run Backend
+### 1. Start MongoDB & Backend Server
 ```bash
 cd backend
 npm install
-npm start
+node server.js
 ```
-*Ensure `.env` contains `PORT=3000`, `MONGODB_URI`, and `JWT_SECRET`.*
 
-### 3. Set Up and Run Frontend
+### 2. Run Automated Caching Benchmark
+In a separate terminal:
+```bash
+cd backend
+node benchmark_caching.js
+```
+This runs 3 uncached requests, 3 cached requests, verifies invalidation on a POST write, and queries `/cache/stats`!
+
+### 3. Start Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-### 4. Build and Measure Bundles
-```bash
-cd frontend
-npm run build
-```
-Notice the distinct chunk breakdown in the terminal output!
-
-### 5. Observe Lazy Loading in Chrome DevTools
-1. Open the app in Chrome/Edge (`http://localhost:5173`).
-2. Open DevTools (`F12`), go to the **Network** tab, and filter by **JS**.
-3. Set Network Throttling to **Slow 3G**.
-4. Click on the **Projects** or **Contact** link.
-5. Observe the fallback UI render momentarily while the respective chunk (`Projects-*.js` or `Contact-*.js`) is fetched over the network.
-
 ---
 
-## 🔒 Authentication & CRUD (Practical 6 & 7 Integration)
-
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| POST | `/auth/register` | Register a new user account | No |
-| POST | `/auth/login` | Log in and receive JWT token | No |
-| GET | `/tasks` | Retrieve all tasks for authenticated user | Yes (Bearer Token) |
-| POST | `/tasks` | Create a new task | Yes (Bearer Token) |
-| PUT | `/tasks/:id` | Update task details or completion status | Yes (Bearer Token) |
-| DELETE | `/tasks/:id` | Delete a task | Yes (Bearer Token) |
-
----
-
-## 🎓 Academic Rubrics & Evaluation
-
-| Rubric Criteria | Score Weight | Status |
-|---|---|---|
-| **Conceptual understanding** | 2 Marks | Fully detailed in `docs/PRACTICAL_8_REPORT.md` (what & why) |
-| **Implementation** | 4 Marks | Original code implemented with `React.lazy()`, `Suspense`, Vite |
-| **Correctness** | 2 Marks | Chunk breakdown matches expected results; 41.4% payload reduction |
-| **Reflection** | 1 Mark | Common pitfalls, error handling & troubleshooting documented |
-| **Lab file evidence** | 1 Mark | Complete documentation with diagrams, metrics, and commit records |
-
----
-
-## Repository & Author
+## 🎓 Academic Deliverables
 - **Author:** Fenil Kardani (`D25IT136`)
 - **Institution:** Charotar University of Science and Technology (CHARUSAT)
 - **Course:** ITUE301 — Advanced Web Development Frameworks

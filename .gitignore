@@ -144,3 +144,7 @@ node_modules/
 # Temporary Office Files
 ~$*
 *.tmp
+
+# Local MongoDB Data
+backend/data/
+data/
