@@ -1,75 +1,125 @@
-# AWDF Practical 6: Full Stack Integration
+# AWDF Practical 7 – Task Management System with Authentication
 
 ## Project Overview
-This project demonstrates full-stack integration using React, Node.js, Express.js, and MongoDB. It is a Task Manager application that allows users to create, view, update, complete, and delete tasks through a web interface.
+This project is a full-stack Task Management System developed using React, Node.js, Express.js, and MongoDB. It allows users to create, view, update, and delete tasks. Authentication and authorization middleware have been implemented using JSON Web Tokens (JWT) to secure access to protected routes.
 
 ## Objectives
-- Connect the React frontend to the Node.js and Express.js backend.
-- Connect the backend to MongoDB for persistent data storage.
-- Implement CRUD operations.
-- Handle loading states and errors.
-- Display toast notifications for successful and failed operations.
-- Verify that task data persists after refreshing the page.
+- Develop a full-stack web application using React and Node.js.
+- Connect the backend to MongoDB for data storage.
+- Implement CRUD operations for task management.
+- Implement user registration and login functionality.
+- Generate and verify JWT tokens for authentication.
+- Protect API routes using authentication middleware.
+- Test API endpoints using Postman.
 
 ## Technologies Used
 - **Frontend:** React, Vite, HTML, CSS, JavaScript
 - **Backend:** Node.js, Express.js
-- **Database:** MongoDB with Mongoose
-- **API Communication:** Fetch API
-- **Development Tools:** Visual Studio Code, Git, GitHub Desktop
+- **Database:** MongoDB
+- **ODM:** Mongoose
+- **Authentication:** JSON Web Token (JWT)
+- **Password Security:** bcrypt (if configured in the project)
+- **API Testing:** Postman
+- **Version Control:** Git and GitHub
+
+## Features
+- User registration and login
+- JWT token generation after successful login
+- Authentication middleware for protected routes
+- Secure task management API
+- Create new tasks
+- Retrieve existing tasks
+- Update task details and completion status
+- Delete tasks
+- Task priority management
+- React frontend integrated with the backend API
+- MongoDB database integration
 
 ## Project Structure
+
 ```text
 AWDF-PR6-FullStack/
 ├── backend/
 │   ├── models/
+│   ├── routes/
+│   ├── middleware/
 │   ├── server.js
 │   ├── package.json
-│   └── .env.example
+│   └── .env
 ├── frontend/
 │   ├── src/
-│   ├── public/
+│   │   ├── api.js
+│   │   ├── App.jsx
+│   │   └── ...
 │   ├── package.json
-│   └── index.html
+│   └── ...
 ├── .gitignore
 └── README.md
 ```
 
-## Features
-- View all tasks.
-- Create new tasks.
-- Update existing tasks.
-- Mark tasks as completed or pending.
-- Delete tasks with confirmation.
-- Set task priorities.
-- Display loading and error messages.
-- Show success and error toast notifications.
-- Store tasks in MongoDB so data remains available after refreshing the page.
+*Note: The folder structure may vary depending on the final implementation.*
+
+## API Endpoints
+
+### Authentication APIs
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/auth/register` | Register a new user |
+| POST | `/auth/login` | Log in and receive a JWT token |
+
+### Task Management APIs
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/tasks` | Retrieve tasks |
+| POST | `/tasks` | Create a task |
+| PUT | `/tasks/:id` | Update a task |
+| DELETE | `/tasks/:id` | Delete a task |
+
+**Authentication:** For protected task endpoints, include the JWT token in the request header:
+
+```text
+Authorization: Bearer <your_jwt_token>
+```
+
+*Use the exact authentication paths configured in your backend if they differ from those listed above.*
 
 ## Installation and Setup
 
-### Prerequisites
-Install Node.js and npm, and ensure MongoDB is configured and accessible.
+### 1. Clone the Repository
 
-### 1. Start the Backend
-Open a terminal in VS Code and run:
+```bash
+git clone https://github.com/KardaniFenilKrushnkant/AWDF-PR6-FullStack.git
+cd AWDF-PR6-FullStack
+```
+
+### 2. Set Up the Backend
 
 ```bash
 cd backend
 npm install
+```
+
+Configure the required environment variables in the backend `.env` file. For example:
+
+```env
+PORT=3000
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_secret_key
+```
+
+Use the variable names expected by your actual backend code. Do not commit the `.env` file or publish your database credentials or JWT secret.
+
+Start the backend:
+
+```bash
 npm start
 ```
 
-The backend runs at:
+### 3. Set Up the Frontend
 
-```text
-http://localhost:3000
-```
-
-Ensure your backend environment variables are configured in `backend/.env`. Use `backend/.env.example` as a reference and provide your own MongoDB connection string. Never upload your actual `.env` file or database credentials to GitHub.
-
-### 2. Start the Frontend
-Open a second terminal in VS Code and run:
+Open a new terminal:
 
 ```bash
 cd frontend
@@ -77,17 +127,31 @@ npm install
 npm run dev
 ```
 
-Open the local URL displayed by Vite in the terminal. It will usually be `http://localhost:5173` or another available port.
+Open the local URL shown by Vite in your browser.
 
-## API Endpoints
+## Testing with Postman
 
-| Method | Endpoint | Operation |
-|---|---|---|
-| GET | `/tasks` | Retrieve all tasks |
-| POST | `/tasks` | Create a task |
-| PUT | `/tasks/:id` | Update a task |
-| DELETE | `/tasks/:id` | Delete a task |
+The following operations were tested during implementation:
 
-## Testing
-1. Start the backend and frontend.
-2. Create
+1. User login using `POST /auth/login`.
+2. Successful login response containing a JWT token.
+3. Task creation using `POST /tasks`.
+4. Retrieving tasks using `GET /tasks`.
+5. Updating a task using `PUT /tasks/:id`.
+6. Deleting a task using `DELETE /tasks/:id`.
+7. Verifying that protected requests use the authentication token.
+
+## Learning Outcomes
+- Understanding full-stack application development.
+- Connecting React with a REST API.
+- Performing CRUD operations with MongoDB and Mongoose.
+- Implementing JWT-based authentication.
+- Using middleware to protect API routes.
+- Testing APIs with Postman.
+- Managing project changes using Git and GitHub.
+
+## Conclusion
+The project demonstrates a full-stack Task Management System with database integration, CRUD functionality, and JWT-based authentication. Practical 7 extends the earlier task management application by introducing authentication and middleware to protect API access.
+
+## Repository
+GitHub: https://github.com/KardaniFenilKrushnkant/AWDF-PR6-FullStack
