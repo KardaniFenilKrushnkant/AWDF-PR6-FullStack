@@ -132,8 +132,8 @@ def create_document():
             p_img.paragraph_format.space_after = Pt(12)
             p_img.add_run().add_picture(img_path, width=Inches(width_inches))
 
-    # Figure 1: Postman POST /tasks (Immediate 201 Created Response)
-    add_figure('fig1_api_response_postman.png', 'Figure 1: Client POST /tasks Request in Postman Returning 201 Created in 20.87 ms', 6.2)
+    # Figure 1: Web App UI - Task Creation with Event Bus Activity Stream & Toast
+    add_figure('fig7_ui_task_created_dashboard.png', 'Figure 1: React Web Application Dashboard: Task Creation with Live EventEmitter Stream & Toast Alert', 6.2)
 
     # Page Break for Page 2
     doc.add_page_break()
@@ -144,11 +144,11 @@ def create_document():
     r_id2.bold = True
     p_id2.paragraph_format.space_after = Pt(8)
 
-    # Figure 2: Terminal Timestamp Ordering Verification
-    add_figure('fig2_event_timestamp_ordering.png', 'Figure 2: Terminal Console Log Showing Immediate Response (T) Preceding Background Worker (+2017 ms)', 6.2)
+    # Figure 2: Web App UI - Error Event Simulation & Interception
+    add_figure('fig8_ui_error_event_dashboard.png', 'Figure 2: React Web Application: Error Event Simulated & Safely Trapped by EventEmitter Handler', 6.2)
 
-    # Figure 3: Supplementary 1 - DELETE /tasks/:id & Audit Log
-    add_figure('fig3_task_deleted_audit.png', 'Figure 3: Supplementary Problem 1: DELETE /tasks/:id with Decoupled task-deleted Audit Event', 6.2)
+    # Figure 3: Web App UI - Task Deletion & Audit Stream
+    add_figure('fig9_ui_task_deleted_dashboard.png', 'Figure 3: React Web Application: Task Deletion Triggering Asynchronous Audit Logging Toast', 6.2)
 
     # Page Break for Page 3
     doc.add_page_break()
@@ -159,23 +159,50 @@ def create_document():
     r_id3.bold = True
     p_id3.paragraph_format.space_after = Pt(8)
 
-    # Figure 4: Supplementary 2 - Error Event Handling
-    add_figure('fig4_error_event_handling.png', 'Figure 4: Supplementary Problem 2: EventEmitter Error Handling Intercepting Exception without Server Crash', 6.2)
+    # Figure 4: Postman POST /tasks (Immediate 201 Created Response)
+    add_figure('fig1_api_response_postman.png', 'Figure 4: Client POST /tasks Request in Postman Returning 201 Created in 20.87 ms', 6.2)
 
-    # Figure 5: Architecture Comparison Flowchart
-    add_figure('fig5_architecture_event_loop.png', 'Figure 5: Architecture Comparison: Synchronous Request Blocking vs. Asynchronous EventEmitter Decoupling', 6.2)
+    # Figure 5: Terminal Timestamp Ordering Verification
+    add_figure('fig2_event_timestamp_ordering.png', 'Figure 5: Terminal Console Log Showing Immediate Response (T) Preceding Background Worker (+2017 ms)', 6.2)
 
-    # Page Break for Page 4 (GitHub Commit + Key Questions)
+    # Page Break for Page 4
     doc.add_page_break()
 
     # Header on Page 4
     p_id4 = doc.add_paragraph()
     r_id4 = p_id4.add_run("Student ID:-D25IT136")
     r_id4.bold = True
-    p_id4.paragraph_format.space_after = Pt(10)
+    p_id4.paragraph_format.space_after = Pt(8)
 
-    # Figure 6: GitHub Repo Commit
-    add_figure('fig6_github_commit.png', 'Figure 6: GitHub Repository (AWDF-PR6-FullStack) Practical 10 EventEmitter Commit Verification', 6.2)
+    # Figure 6: Supplementary 1 - DELETE /tasks/:id & Audit Log
+    add_figure('fig3_task_deleted_audit.png', 'Figure 6: Supplementary Problem 1: DELETE /tasks/:id with Decoupled task-deleted Audit Event', 6.2)
+
+    # Figure 7: Supplementary 2 - Error Event Handling
+    add_figure('fig4_error_event_handling.png', 'Figure 7: Supplementary Problem 2: EventEmitter Error Handling Intercepting Exception without Server Crash', 6.2)
+
+    # Page Break for Page 5
+    doc.add_page_break()
+
+    # Header on Page 5
+    p_id5_img = doc.add_paragraph()
+    r_id5_img = p_id5_img.add_run("Student ID:-D25IT136")
+    r_id5_img.bold = True
+    p_id5_img.paragraph_format.space_after = Pt(8)
+
+    # Figure 8: Architecture Comparison Flowchart
+    add_figure('fig5_architecture_event_loop.png', 'Figure 8: Architecture Comparison: Synchronous Request Blocking vs. Asynchronous EventEmitter Decoupling', 6.2)
+
+    # Figure 9: GitHub Repo Commit
+    add_figure('fig6_github_commit.png', 'Figure 9: GitHub Repository (AWDF-PR6-FullStack) Practical 10 EventEmitter Commit Verification', 6.2)
+
+    # Page Break for Page 6 (Key Questions)
+    doc.add_page_break()
+
+    # Header on Page 6
+    p_id4 = doc.add_paragraph()
+    r_id4 = p_id4.add_run("Student ID:-D25IT136")
+    r_id4.bold = True
+    p_id4.paragraph_format.space_after = Pt(10)
 
     # Heading: Key Questions
     p_kq = doc.add_paragraph()
@@ -338,13 +365,23 @@ def create_document():
     r_url.font.color.rgb = RGBColor(0x1d, 0x4e, 0xd8)
     r_url.underline = True
 
-    # Save to both target locations
+    # Save to target locations
     output_path1 = r'C:\Users\Abc\Downloads\AWDF_Practical_10_D25IT136.docx'
+    output_path1_alt = r'C:\Users\Abc\Downloads\AWDF_Practical_10_D25IT136_With_UI.docx'
     output_path2 = r'C:\Users\Abc\Downloads\AWDF-PR6-FullStack\AWDF_Practical_10_D25IT136.docx'
 
-    doc.save(output_path1)
-    doc.save(output_path2)
-    print(f"Practical 10 Document created successfully at:\n1. {output_path1}\n2. {output_path2}")
+    try:
+        doc.save(output_path1)
+        print(f"Saved: {output_path1}")
+    except PermissionError:
+        doc.save(output_path1_alt)
+        print(f"Original file was open in Word. Saved updated file to: {output_path1_alt}")
+
+    try:
+        doc.save(output_path2)
+        print(f"Saved: {output_path2}")
+    except Exception as e:
+        print(f"Error saving to repo: {e}")
 
 if __name__ == '__main__':
     create_document()

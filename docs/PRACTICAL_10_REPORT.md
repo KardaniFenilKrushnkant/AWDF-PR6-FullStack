@@ -149,6 +149,13 @@ app.delete('/tasks/:id', async (req, res, next) => {
 });
 ```
 
+### D. Frontend Web Application UI Integration (`frontend/src/pages/Home.jsx`, `frontend/src/App.jsx`)
+To make the background asynchronous behavior visible directly to the end user in the browser:
+1. **Event Bus Activity Card:** Added a dedicated SaaS-grade component on the main dashboard (`Home.jsx`) titled **"Event-Driven Asynchronous Processing"** featuring a live status indicator (`Node.js EventEmitter Active`).
+2. **Live EventEmitter Stream:** Renders a real-time activity list displaying events as they are emitted from user actions (`TASK-CREATED`, `TASK-DELETED`, `ERROR`), with precise timestamps and execution metadata.
+3. **Non-Blocking User Feedback:** Displays instantaneous toast notifications indicating that background notifications/audit logs were dispatched asynchronously without blocking the client interface.
+4. **Interactive Error Simulation Button:** Provides a direct UI control (`🛡️ Simulate & Catch Error Event`) invoking `POST /test-event-error` to demonstrate live that errors in background listeners are trapped safely without interrupting server availability.
+
 ---
 
 ## 4. Empirical Timestamp Ordering & Verification

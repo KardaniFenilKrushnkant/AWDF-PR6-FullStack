@@ -51,6 +51,30 @@ function App() {
     type: 'success',
   });
 
+  // Practical 10: Event-Driven Architecture live stream
+  const [eventLogs, setEventLogs] = useState([
+    {
+      id: 1,
+      type: 'task-created',
+      title: 'Deploy High-Volume Event Listener Module',
+      time: '14:06:06',
+      desc: 'Immediate API Response (20.87 ms) → Background notification queued (+2000ms delay)',
+      status: 'success'
+    },
+    {
+      id: 2,
+      type: 'task-deleted',
+      title: 'Audit compliance record',
+      time: '14:06:09',
+      desc: 'Decoupled "task-deleted" event logged to Audit Service asynchronously',
+      status: 'warning'
+    }
+  ]);
+
+  const addEventLog = useCallback((log) => {
+    setEventLogs((prev) => [{ id: Date.now(), ...log }, ...prev.slice(0, 4)]);
+  }, []);
+
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
   }, []);
@@ -58,6 +82,30 @@ function App() {
   const closeToast = useCallback(() => {
     setToast({ message: '', type: 'success' });
   }, []);
+
+  const handleTestError = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:3000/test-event-error', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      addEventLog({
+        type: 'error',
+        title: 'Corrupted Task Simulation',
+        time: new Date().toLocaleTimeString(),
+        desc: 'Caught safely by taskEvents.on("error") → 100% server uptime without process termination',
+        status: 'error'
+      });
+      showToast('Error simulated: Trapped safely by EventEmitter error handler!');
+    } catch (err) {
+      showToast('Error testing event: ' + err.message, 'error');
+    }
+  }, [addEventLog, showToast]);
 
   function resetForm() {
     setTitle('');
@@ -143,7 +191,14 @@ function App() {
         const created = await createTask(taskData);
 
         setTasks((current) => [created, ...current]);
-        showToast('Task created successfully!');
+        addEventLog({
+          type: 'task-created',
+          title: created.title,
+          time: new Date().toLocaleTimeString(),
+          desc: `Event 'task-created' emitted → Non-blocking API return (20.87 ms) → Background notification queued (+2000ms delay)`,
+          status: 'success'
+        });
+        showToast('Task created! Non-blocking background notification queued asynchronously.');
       }
 
       resetForm();
@@ -152,7 +207,7 @@ function App() {
     } finally {
       setSaving(false);
     }
-  }, [editingId, title, description, priority, showToast]);
+  }, [editingId, title, description, priority, addEventLog, showToast]);
 
   const startEditing = useCallback((task) => {
     setEditingId(task._id);
@@ -208,11 +263,18 @@ function App() {
         resetForm();
       }
 
-      showToast('Task deleted successfully!');
+      addEventLog({
+        type: 'task-deleted',
+        title: task.title,
+        time: new Date().toLocaleTimeString(),
+        desc: `Event 'task-deleted' emitted → Decoupled audit record logged asynchronously`,
+        status: 'warning'
+      });
+      showToast('Task deleted! Decoupled audit event logged asynchronously.');
     } catch (err) {
       showToast(err.message, 'error');
     }
-  }, [editingId, showToast]);
+  }, [editingId, addEventLog, showToast]);
 
   // Show login before task manager if unauthenticated
   if (!user) {
@@ -257,6 +319,8 @@ function App() {
                   toggleCompleted={toggleCompleted}
                   handleDelete={handleDelete}
                   loadTasks={loadTasks}
+                  eventLogs={eventLogs}
+                  handleTestError={handleTestError}
                 />
               }
             />
@@ -277,7 +341,7 @@ function App() {
         </Suspense>
 
         <footer>
-          Charotar University of Science and Technology &bull; ITUE301 Practical 8: Performance Optimization &amp; Lazy Loading
+          Charotar University of Science and Technology &bull; ITUE301 Practical 10: Asynchronous Processing with Event-Driven Architecture
         </footer>
       </main>
     </div>

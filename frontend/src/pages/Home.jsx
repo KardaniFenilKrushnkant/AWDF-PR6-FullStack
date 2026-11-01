@@ -21,6 +21,8 @@ export default function Home({
   toggleCompleted,
   handleDelete,
   loadTasks,
+  eventLogs = [],
+  handleTestError,
 }) {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -108,6 +110,50 @@ export default function Home({
           </div>
         </div>
       </header>
+
+      {/* Practical 10: Event-Driven Background Processing Status & Activity Stream */}
+      <section className="event-bus-section">
+        <div className="event-bus-header">
+          <div className="event-bus-title-group">
+            <span className="event-bus-pill">⚡ Practical 10</span>
+            <h3 className="event-bus-title">Event-Driven Asynchronous Processing</h3>
+            <span className="event-status-badge">Node.js EventEmitter Active</span>
+          </div>
+          <button
+            type="button"
+            className="btn-simulate-error"
+            onClick={handleTestError}
+            title="Triggers POST /test-event-error to test EventEmitter error isolation"
+          >
+            🛡️ Simulate & Catch Error Event
+          </button>
+        </div>
+        <p className="event-bus-desc">
+          When tasks are created or deleted, the API responds immediately (~20 ms) while heavy notification and audit handlers run asynchronously in the background via Libuv timers.
+        </p>
+
+        <div className="event-stream-container">
+          <div className="event-stream-header">
+            <span className="stream-dot-pulse"></span>
+            <strong>Live Background Event Bus Activity</strong>
+            <span className="stream-badge-count">{eventLogs.length} events logged</span>
+          </div>
+          <div className="event-stream-list">
+            {eventLogs.map((log) => (
+              <div key={log.id} className={`event-log-item status-${log.status}`}>
+                <div className="event-log-meta">
+                  <span className="event-time">{log.time}</span>
+                  <span className={`event-type-pill type-${log.type}`}>{log.type}</span>
+                </div>
+                <div className="event-log-details">
+                  <span className="event-task-name">{log.title}</span>
+                  <span className="event-desc">{log.desc}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Main Two-Column or Stacked Dashboard Grid */}
       <div className="dashboard-grid">
