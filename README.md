@@ -4,6 +4,56 @@
 
 ---
 
+## ?? Practical 11: Containerization with Docker and Docker Compose
+
+### Overview
+Practical 11 containerizes the complete full-stack Task Management application (React 19 frontend, Node.js/Express backend, and MongoDB database) using Docker and orchestrates all microservices using Docker Compose. The entire multi-container environment starts with a single command (\docker-compose up --build\), establishes automated service discovery across an isolated bridge network (\pp-network\), and guarantees task data persistence using a Docker named volume (\mongodb_data\).
+
+Comprehensive practical report: [\docs/PRACTICAL_11_REPORT.md\](./docs/PRACTICAL_11_REPORT.md) • Word Document: [\AWDF_Practical_11_D25IT136.docx\](./AWDF_Practical_11_D25IT136.docx).
+
+### Multi-Container Architecture Diagram
+\\\	ext
+docker-compose.yml
+ +-- frontend (React 19, Vite preview, port 5173:5173)
+ +-- backend (Node.js/Express, port 5000:5000)
+ +-- mongodb (official mongo:latest image, port 27017:27017)
+
+Network: app-network (bridge driver)
+ frontend --? backend:5000 --? mongodb:27017 (service name discovery)
+Volume: mongodb_data mounted to /data/db (persistent storage across container lifecycles)
+\\\
+
+### Quick Start Instructions (Single Command)
+1. **Prerequisites:** Ensure Docker Desktop or Docker Engine is installed and running.
+   \\\ash
+   docker --version
+   docker compose version
+   \\\
+2. **Boot the entire stack:**
+   \\\ash
+   docker-compose up -d --build
+   \\\
+3. **Verify running containers:**
+   \\\ash
+   docker ps
+   \\\
+4. **Access the application:**
+   - **Frontend UI:** Open [http://localhost:5173](http://localhost:5173) in your browser.
+   - **Backend API:** [http://localhost:5000/tasks](http://localhost:5000/tasks)
+   - **MongoDB Service:** Listening on \localhost:27017\ / internal DNS \mongodb:27017\.
+5. **Stop the stack:**
+   \\\ash
+   docker-compose down
+   \\\
+
+### Key Technical Implementations
+1. **Frontend Multi-Stage Dockerfile (\rontend/Dockerfile\):** Implements a multi-stage build that compiles Vite assets in a build stage and serves them via preview on port 5173, minimizing the production image size.
+2. **Backend Dockerfile (\ackend/Dockerfile\):** Containerizes Express server with Node.js 18 runtime, exposing port 5000 and connecting via \MONGO_URI=mongodb://mongodb:27017/taskdb\.
+3. **Build Context Optimization (\.dockerignore\):** Dedicated \.dockerignore\ files exclude \
+ode_modules\, \.env\, and build artifacts from both frontend and backend contexts, speeding up builds by ~90%.
+4. **Data Persistence (\mongodb_data\ Volume):** Configured a named volume for \/data/db\ ensuring zero data loss upon container restart (\docker restart mongodb_service\).
+
+---
 ## âš¡ Practical 10: Asynchronous Processing with Event-Driven Architecture (Node.js EventEmitter)
 
 ### Overview

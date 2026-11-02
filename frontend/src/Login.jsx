@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './Login.css';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function Login({ onLogin }) {
   const [isRegister, setIsRegister] = useState(false);
@@ -226,3 +226,4 @@ function Login({ onLogin }) {
 }
 
 export default Login;
+

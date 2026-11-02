@@ -1,3 +1,4 @@
+if (!globalThis.crypto) { globalThis.crypto = require('crypto'); }
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
@@ -214,9 +215,10 @@ app.use((err, req, res, next) => {
 });
 
 // Database connection & Server initialization
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongodb:27017/taskdb';
 
-mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000 })
+mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 })
   .then(() => {
     console.log('MongoDB connected successfully');
     app.listen(PORT, () => {
